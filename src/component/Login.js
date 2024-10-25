@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
+import {useConstants} from "../context/ConstantsContext";
 
 const Login = () => {
+    const { API_URL } = useConstants();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const navigate = useNavigate();
@@ -13,15 +15,15 @@ const Login = () => {
         e.preventDefault();
         try {
             // 로그인 API 요청
-            const response = await axios.post('http://localhost:8081/api/v1/auth/login', {
+            const response = await axios.post(`${API_URL}/api/v2/auth/login`, {
                 email: email,
                 password: password,
             });
 
             const result = response.data;
             if (result.status === 200 && result.data.accessToken) {
-                localStorage.setItem('token', response.data.accessToken);
-                navigate('/map');
+                localStorage.setItem('Authorization', result.data.accessToken);
+                navigate("/stores");
             }
         } catch (err) {
             // 에러 처리

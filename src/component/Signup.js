@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
+import { Link , useNavigate } from 'react-router-dom';
+import {useConstants} from "../context/ConstantsContext";
 
 const Signup = () => {
+    const { API_URL } = useConstants();
+    const navigate = useNavigate();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [email, setEmail] = useState('');
@@ -13,7 +16,7 @@ const Signup = () => {
     const handleSignup = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.post('http://localhost:8081/api/v1/auth/signup', {
+            const response = await axios.post(`${API_URL}/api/v2/auth/signup`, {
                 username: username,
                 password: password,
                 email: email,
@@ -21,6 +24,10 @@ const Signup = () => {
                 adminToken: adminToken,
                 userRole: userRole,
             });
+
+            if (response.status === 200) {
+                navigate('/');
+            }
             console.log('Signup response:', response.data);
         } catch (err) {
             console.error('Signup error:', err.response ? err.response.data : err.message);
