@@ -48,6 +48,7 @@ const Stores = () => {
     const handleSearch = async (e) => {
         setPage(0); // 페이지를 0로 리셋
         setStoreList([]); // 리스트 초기화
+        fetchStores();
     };
 
     const handleReservation = (e) => {
@@ -56,48 +57,48 @@ const Stores = () => {
         navigate(`/payment/${storeId}/${selectedDate} ${time}`);
     }
 
-    useEffect(() => {
-        const fetchStores = async () => {
-            try {
-                const response = await axios.get(`${API_URL}/api/v1/user/stores/search`, {
-                    headers: {
-                        Authorization: localStorage.getItem('Authorization'), // 여기에 실제 토큰 값을 넣으세요
-                    },
-                    params: {
-                        storeName: searchTerm, // 쿼리 파라미터로 username을 추가
-                        size : size,
-                        page : page
-                    },
-                });
+    const fetchStores = async () => {
+        try {
+            const response = await axios.get(`${API_URL}/api/v1/user/stores/search`, {
+                headers: {
+                    Authorization: localStorage.getItem('Authorization'), // 여기에 실제 토큰 값을 넣으세요
+                },
+                params: {
+                    storeName: searchTerm, // 쿼리 파라미터로 username을 추가
+                    size : size,
+                    page : page
+                },
+            });
 
-                const data = response.data.data.content;
+            const data = response.data.data.content;
 
-                let list = [];
-                if (data.length > 0) {
-                    for(let idx in data) {
-                        list[idx] = {
-                            id : data[idx].id,
-                            title : data[idx].title,
-                            image : "https://png.pngtree.com/thumb_back/fh260/background/20220318/pngtree-photography-of-chinese-food-restaurant-image_1020164.jpg",
-                            openTime : data[idx].openTime,
-                            closeTime : data[idx].closeTime,
-                            deposit : data[idx].deposit,
-                            address : data[idx].address,
-                            turnOver : data[idx].turnover,
-                            slot : calculateAvailableSlots(data[idx].openTime, data[idx].closeTime, data[idx].turnover)
-                        }
+            let list = [];
+            if (data.length > 0) {
+                for(let idx in data) {
+                    list[idx] = {
+                        id : data[idx].id,
+                        title : data[idx].title,
+                        image : "https://png.pngtree.com/thumb_back/fh260/background/20220318/pngtree-photography-of-chinese-food-restaurant-image_1020164.jpg",
+                        openTime : data[idx].openTime,
+                        closeTime : data[idx].closeTime,
+                        deposit : data[idx].deposit,
+                        address : data[idx].address,
+                        turnOver : data[idx].turnover,
+                        slot : calculateAvailableSlots(data[idx].openTime, data[idx].closeTime, data[idx].turnover)
                     }
-                    setStoreList(prevStores => {
-                        const existingIds = new Set(prevStores.map(store => store.id));
-                        return [...prevStores, ...list.filter(store => !existingIds.has(store.id))];
-                    });
                 }
-                console.log('Signup response:', response.data);
-            } catch (error) {
-                console.error('Error fetching data:', error);
+                setStoreList(prevStores => {
+                    const existingIds = new Set(prevStores.map(store => store.id));
+                    return [...prevStores, ...list.filter(store => !existingIds.has(store.id))];
+                });
             }
-        };
+            console.log('Signup response:', response.data);
+        } catch (error) {
+            console.error('Error fetching data:', error);
+        }
+    };
 
+    useEffect(() => {
         fetchStores();
     }, [page]); // 페이지가 변경될 때마다 호출
 

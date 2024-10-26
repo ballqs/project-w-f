@@ -12,9 +12,8 @@ const Payment = () => {
     const navigate = useNavigate(); // navigate 훅 사용
 
     const generateRandomString = () => window.btoa(Math.random()).slice(0, 20);
-    const clientKey = "test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoq";
+    const clientKey = "test_ck_Poxy1XQL8RaXybvzaGLkr7nO5Wml";
     const customerKey = generateRandomString();
-    const [ready, setReady] = useState(false);
     const [payment, setPayment] = useState(null);
 
     useEffect(() => {
@@ -22,14 +21,14 @@ const Payment = () => {
         if (!token) {
             navigate('/'); // 토큰이 없으면 로그인 화면으로 리디렉션
         }
-    }, [navigate]); // navigate가 변경될 때마다 실행
+    }, [navigate]);
 
     useEffect(() => {
         const getStore = async () => {
             try {
                 const response = await axios.get(`${API_URL}/api/v1/user/stores/${storeId}`, {
                     headers: {
-                        Authorization: localStorage.getItem('Authorization'), // 여기에 실제 토큰 값을 넣으세요
+                        Authorization: localStorage.getItem('Authorization'),
                     }
                 });
 
@@ -47,21 +46,18 @@ const Payment = () => {
         };
 
         getStore();
-    }, []);
-
+    }, [API_URL, storeId]);
 
     useEffect(() => {
+        // useEffect 내부에서 fetchPayment를 직접 정의하여 한 번만 호출되도록 처리
         async function fetchPayment() {
             try {
                 const tossPayments = await loadTossPayments(clientKey);
 
                 // 회원 결제
-                // @docs https://docs.tosspayments.com/sdk/v2/js#tosspaymentspayment
                 const payment = tossPayments.payment({
                     customerKey,
                 });
-                // 비회원 결제
-                // const payment = tossPayments.payment({ customerKey: ANONYMOUS });
 
                 setPayment(payment);
             } catch (error) {
@@ -70,10 +66,7 @@ const Payment = () => {
         }
 
         fetchPayment();
-    }, [clientKey, customerKey]);
-
-
-
+    }, []); // dependency array를 빈 배열로 설정하여 한 번만 실행
 
     const handlePayment = async () => {
         try {
@@ -87,15 +80,22 @@ const Payment = () => {
                     date : dt[0],
                     time : dt[1],
                     numberPeople : 2,
-                    amount : store.deposit
+                    amount : store.deposit,
+                    orderName : store.title
                 },
             });
 
             const result = response.data;
-            if (result.status === 200) {
+            if (result.status === 200 && payment) { // payment가 설정된 후에만 호출
+
+                const amount = {
+                    currency: "KRW",
+                    value: result.data.amount,
+                };
+
                 await payment.requestPayment({
                     method: "CARD", // 카드 및 간편결제
-                    amount: result.data.amount,
+                    amount,
                     orderId: result.data.orderId,
                     orderName: "토스 티셔츠 외 2건",
                     successUrl: `${API_URL}/api/v2/payment/success` + window.location.search,
@@ -112,10 +112,9 @@ const Payment = () => {
                 });
             }
         } catch (err) {
-            // 에러 처리
             console.error('Login error:', err.response ? err.response.data : err.message);
         }
-    }
+    };
 
     return (
         <PaymentContainer>
@@ -126,8 +125,6 @@ const Payment = () => {
                 <p>예약 시간: {datetime}</p>
                 {/* 결제 관련 UI 구성 */}
                 <Price>선 예약금: {store.deposit}원</Price>
-                <div id="payment-method" className="w-100"/>
-                <div id="agreement" className="w-100"/>
                 <ReservationButton onClick={handlePayment}>예약하기</ReservationButton>
             </ContentWrapper>
         </PaymentContainer>
